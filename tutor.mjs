@@ -16,11 +16,11 @@ export async function tutor(request, publicOrigin) {
   if (!result.ok) {
    const body = await result.json().catch(() => null);
    const code = body?.error?.code;
-   const message = code === 'insufficient_quota' || code === 'billing_hard_limit_reached'
+   const message = body?.error?.type === 'insufficient_quota' || ['insufficient_quota', 'billing_hard_limit_reached', 'organization_usage_limit_exceeded', 'project_usage_limit_exceeded', 'credit_balance_exhausted'].includes(code)
     ? 'The OpenAI project has no available API quota. Check its billing and credits.'
     : result.status === 401 ? 'OpenAI rejected the API key saved in Study Spark.'
     : result.status === 403 || code === 'model_not_found' ? 'The OpenAI project does not have access to the tutor model.'
-    : result.status === 429 ? 'The tutor is busy. Please try again shortly.'
+    : result.status === 429 ? 'OpenAI rate-limited the tutor. Wait a minute, then try once.'
     : 'The tutor is temporarily unavailable.';
    return Response.json({error:message},{status:502});
   }
