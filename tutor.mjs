@@ -8,7 +8,7 @@ export async function tutor(request, publicOrigin) {
   const messages = JSON.parse(raw);
   if(!Array.isArray(messages) || messages.length>15 || messages.some(m=>!['user','assistant'].includes(m?.role)||typeof m.content!=='string'||m.content.length>2000)) return Response.json({error:'Please shorten the lesson.'},{status:400});
   const keyName = Object.keys(process.env).find(name => name.trim().toUpperCase() === 'OPENAI_API_KEY' && process.env[name]?.trim());
-  const apiKey = process.env.OPENAI_API_KEY?.trim() || (keyName && process.env[keyName].trim());
+  const apiKey = process.env.OPENAI_API_KEY?.trim() || (keyName && process.env[keyName].trim()) || process.env.OPEN_API_KEY?.trim();
   if (!apiKey) {
    return Response.json({error:'The site is missing its OpenAI API key.'},{status:503});
   }
