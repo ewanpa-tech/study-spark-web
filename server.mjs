@@ -3,6 +3,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { tutor } from './tutor.mjs';
 
+console.info('Study Spark API configuration', JSON.stringify(Object.keys(process.env).filter(name => /OPEN.?AI/i.test(name)).map(name => ({name, populated: Boolean(process.env[name]?.trim()), secretKeyFormat: process.env[name]?.trim().startsWith('sk-') ?? false}))));
+
 const port = Number(process.env.PORT || 3000);
 const origin = new URL(process.env.PUBLIC_ORIGIN || process.env.RENDER_EXTERNAL_URL || 'http://localhost:' + port).origin;
 const password = process.env.STUDY_SPARK_PASSWORD;
