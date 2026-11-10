@@ -9,7 +9,6 @@ export async function tutor(request, publicOrigin) {
   if(!Array.isArray(messages) || messages.length>15 || messages.some(m=>!['user','assistant'].includes(m?.role)||typeof m.content!=='string'||m.content.length>2000)) return Response.json({error:'Please shorten the lesson.'},{status:400});
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
-   console.error('Tutor secret binding unavailable', { bindingType: typeof binding, emptyString: value === '' });
    return Response.json({error:'The site is missing its OpenAI API key.'},{status:503});
   }
   const result = await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_MODEL || 'gpt-4.1-mini',store:false,max_output_tokens:350,instructions:'You are Ms. Smartson, a patient AI tutor for seventh-grade math and science. Use plain spoken language. Teach one step at a time with an example and ask one short question. Wait for the student to try. On errors, give a targeted hint before revealing the answer. Redirect unrelated topics to the lesson. Do not request personal information. Format your reply as plain text.',input:messages})});
