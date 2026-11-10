@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Study Spark | Grade 7</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f4ee;color:#1c2940;font:16px system-ui,sans-serif}header{background:#15233b;color:white;padding:24px max(6vw,20px);font-weight:800;letter-spacing:.08em}header span{color:#b9e8cc;margin-right:12px}main{max-width:980px;margin:auto;padding:32px 20px 52px}.eyebrow{font-size:.78rem;letter-spacing:.15em;font-weight:800;color:#28654f}h1{font-size:clamp(2.6rem,7vw,4.6rem);letter-spacing:-.07em;line-height:1;margin:.2em 0}h2,h3{margin:0 0 10px}p{line-height:1.55}nav{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:28px 0 16px}button,select,input{font:inherit;border-radius:12px;border:1px solid #abb2bb;padding:12px;color:inherit;background:white}button{cursor:pointer;font-weight:700}nav button{text-align:left;padding:18px;font-size:1.15rem}nav button[aria-pressed=true]{background:#c8edda;border-color:#326951}nav button[data-subject=science][aria-pressed=true]{background:#e4ddff;border-color:#62528b}.panel{background:white;border:1px solid #d9dce0;border-radius:22px;padding:clamp(18px,4vw,32px)}.bar,.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.bar{justify-content:space-between}.tag{font-size:.85rem;font-weight:700;color:#28654f}.note{background:#f2f5f9;border-radius:12px;padding:12px 16px}.primary{background:#213652;color:white;border-color:#213652}input{max-width:100%;flex:1;min-width:150px}.answer input{min-width:0;accent-color:#326951}.answer{display:block;margin:8px 0}footer{margin-top:18px;color:#46556b;font-size:.9rem}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #6265ba;outline-offset:3px}[hidden]{display:none!important}
+</style>
+<header><span>✦</span> STUDY SPARK</header><main>
+<div class="eyebrow">GRADE 7 · LEARNING LAB</div><h1>Small steps.<br>Big discoveries.</h1><p>Pick a subject and try three questions. Take a hint whenever you need one.</p>
+<section class="panel" style="margin:24px 0">
+<div class="eyebrow">VIRTUAL CLASSROOM</div><h2>Learn with Ms. Smartson</h2>
+<p>Type a math or science topic or a homework problem to get started.</p>
+<div id="lesson" class="note" role="log" aria-label="Lesson whiteboard"></div>
+<form id="tutorForm" class="actions"><input id="prompt" aria-label="Lesson or answer" maxlength="1500" required placeholder="What are you learning?"><button class="primary" id="send">Send</button><button type="button" id="listen">Read reply aloud</button><button type="button" id="resetLesson">New lesson</button></form><p id="tutorStatus" role="status"></p>
+</section>
+<script>
+const historyKey='study-spark-current-lesson';
+let conversation=[];
+try { conversation=JSON.parse(localStorage.getItem(historyKey)||'[]'); } catch {}
+const lesson=document.getElementById('lesson'), promptField=document.getElementById('prompt'), send=document.getElementById('send'), statusLine=document.getElementById('tutorStatus'), reset=document.getElementById('resetLesson');
+function drawLesson(){
+ lesson.replaceChildren(...conversation.map(message=>{
+  const p=document.createElement('p');
+  p.textContent=(message.role==='assistant'?'Ms. Smartson: ':'You: ')+message.content;
+  return p;
+ }));
+ lesson.hidden=!conversation.length;
+}
+drawLesson();
+document.getElementById('tutorForm').onsubmit=async event=>{
+ event.preventDefault();
+ const content=promptField.value.trim();
+ if(!content||send.disabled)return;
+ const input=[...conversation.slice(-12),{role:'user',content}];
+ send.disabled=reset.disabled=true;
+ statusLine.textContent='Ms. Smartson is preparing her reply…';
+ try{
+  const response=await fetch('/tutor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
+  const data=await response.json();
+  if(!data.reply)throw new Error(data.error);
+  conversation=[...input,{role:'assistant',content:data.reply}];
+  try{localStorage.setItem(historyKey,JSON.stringify(conversation));}catch{}
+  drawLesson();promptField.value='';statusLine.textContent='';
+ }catch(error){statusLine.textContent=error.message||'Try again.';}
+ finally{send.disabled=reset.disabled=false;}
+};
+document.getElementById('listen').onclick=()=>{
+ const reply=conversation.findLast(message=>message.role==='assistant');
+ if(reply&&window.speechSynthesis){speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(reply.content);speech.rate=.9;speechSynthesis.speak(speech);}
+};
+reset.onclick=()=>{conversation=[];try{localStorage.removeItem(historyKey);}catch{}drawLesson();statusLine.textContent='';promptField.focus();};
+</script>
+<nav aria-label="Subject"><button data-subject="math" aria-pressed="true">＋ Math</button><button data-subject="science" aria-pressed="false">◉ Science</button></nav>
+<section class="panel"><div class="bar"><label>Topic <select id="topic"></select></label><span class="tag" id="progress"></span></div><hr style="border:0;border-top:1px solid #e5e7eb;margin:22px 0">
+<div id="practice"><h2 id="question" tabindex="-1"></h2><form id="form"><div id="response"></div><div class="actions" style="margin-top:14px"><button class="primary" id="check">Check answer</button><button type="button" id="hint">Show hint</button><button type="button" id="explain">Show explanation</button></div></form><div aria-live="polite"><p class="note" id="feedback" hidden></p><p class="note" id="help" hidden></p></div><button class="primary" id="next" hidden>Next question →</button></div>
+<div id="summary" hidden><h2 tabindex="-1" id="done">Session complete</h2><p id="score"></p><p id="review"></p><button id="restart" class="primary">Practice again</button></div></section>
+<footer>Answers and feedback stay in this session. Use the topic menu to explore another skill.</footer>
+<script src="app.js"></script>
